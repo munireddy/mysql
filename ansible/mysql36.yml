@@ -1,0 +1,139 @@
+---
+- hosts: mysql3
+  vars:
+    mysql_password: passw0rd
+    mysql_version:  Ok
+    mysql_auth: Use Strong Password Encryption (RECOMMENDED)
+    mysql_package_name: mysql-apt-config_0.8.10-1_all.deb
+    mysql_checksum: 5b36dd754e7752162f890206fae50931
+  tasks:
+  - name: Install the iptable package
+    become: yes
+    package:
+      name: iptables
+      state: latest
+
+  - name: Add 3306 port
+    become: yes
+    iptables:
+       chain: INPUT
+       protocol: tcp
+       destination_port: 3306
+
+  - name: Add 33061 port
+    become: yes
+    iptables:
+       chain: INPUT
+       protocol: tcp
+       destination_port: 33061
+
+  - name: save ip tables
+    become: yes
+    command: iptables-save
+
+  - name: export front end
+    become: yes
+    shell: export DEBIAN_FRONTEND=noninteractive
+
+  - name: Install python-mysql libraries
+    become: yes
+    apt: name=python-mysqldb update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Download mysql cluster pacakges with check md5
+    get_url:
+      url: https://dev.mysql.com/get/{{mysql_package_name}}
+      dest: /home/ubuntu/{{mysql_package_name}}
+
+  - name:  Set mysql root password
+    become: yes
+    debconf: name='mysql-community-server' question='mysql-community-server/root-pass' value='{{mysql_password | quote}}' vtype='password'
+
+  - name:  Confirm mysql root password
+    become: yes
+    debconf: name='mysql-community-server' question='mysql-community-server/re-root-pass' value='{{mysql_password | quote}}' vtype='password'
+
+  - name: Select Product
+    become: yes
+    debconf:
+      name: mysql-apt-config
+      question: mysql-apt-config/select-product
+      value: Ok
+      vtype: select
+
+  - name: Select Auth
+    become: yes
+    debconf:
+      name: mysql-community-server
+      question: mysql-server/default-auth-override
+      value: Use Strong Password Encryption (RECOMMENDED)
+      vtype: select
+
+  - name: dmr warning
+    become: yes
+    debconf:
+      name: mysql-community-server
+      question: mysql-community-server/data-dir
+      value: Ok
+      vtype: note
+
+  - name: Unpack the cluster packages
+    become: yes
+    apt:
+      deb: '{{mysql_package_name}}'
+
+
+
+  - name: Update system
+    become: yes
+    command: apt update
+
+
+  - name: Install mysql-server
+    become: yes
+    apt: name=mysql-server update_cache=yes cache_valid_time=3600 state=present
+
+  - name: Install mysql-shell
+    become: yes
+    apt: name=mysql-shell update_cache=yes cache_valid_time=3600 state=present
+
+  - name: Install mysql clinet for MySQL client  libraries
+    become: yes
+    apt: name=libmysqlclient-dev update_cache=yes cache_valid_time=3600 state=present
+
+  - name: Install python pip
+    become: yes
+    apt: name=python-pip update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Update system
+    become: yes
+    command: apt update
+
+  - name: Install MySQL mysql-python libraries
+    become: yes
+    command: pip install mysql-python
+
+  - name: Copy mysqld config file
+    become: yes
+    template: src=myconf1.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf  owner=root mode=0600
+
+
+  - name: Copy mysql credentail config file
+    become: yes
+    template: src=my.cnf dest=/home/ubuntu/.my.cnf  owner=root mode=0600
+
+  - name: create users
+    mysql_user:
+        login_user: root
+        login_password: passw0rd
+        name: cadmin1
+        password: passw0rd
+        priv: '*.*:ALL'
+        state: present
+
+  - name: check mysql login
+    become: yes
+    command: mysql  -u root  -p
+
+
