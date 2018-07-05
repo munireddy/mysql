@@ -1,0 +1,9 @@
+dba.verbose=2
+
+dba.checkInstanceConfiguration('cadmin5@localhost:3306')
+dba.configureInstance('cadmin5@localhost:3306')
+shell.connect('cadmin5@localhost:3306')
+var cluster = dba.createCluster('testCluster')
+var cluster = dba.getCluster('testCluster')
+var cluster = dba.rebootClusterFromCompleteOutage('testCluster')
+
