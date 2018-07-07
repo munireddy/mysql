@@ -8,7 +8,13 @@ datadir         = /var/lib/mysql
 
 log-error       = /var/log/mysql/error.log
 
-group_replication_ip_whitelist= "10.0.5.27,10.0.11.13,10.0.12.6"
+#group_replication_ip_whitelist= "172.31.28.73,172.31.47.199,172.31.41.22"
 
 default_authentication_plugin= mysql_native_password
+
+connect_timeout=120
+server_id=201801
+binlog_checksum=NONE
+enforce_gtid_consistency=ON
+gtid_mode=ON
 

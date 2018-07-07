@@ -1,5 +1,5 @@
 ---
-- hosts: mysql5
+- hosts: mysql18
   vars:
     mysql_password: passw0rd
     mysql_version:  Ok
@@ -117,26 +117,41 @@
     become: yes
     command: apt update
 
-  - name: insert password
+  - name:  insert mysql password
     become: yes
     lineinfile:
       destfile: /etc/mysql/my.cnf
       line: 'password=passw0rd'
       insertbefore: BOF
 
-  - name: insert user
+  - name: insert mysql user
     become: yes
     lineinfile:
       destfile: /etc/mysql/my.cnf
       line: 'user=root'
       insertbefore: BOF
 
-  - name: insert mysql
+  - name: insert mysql tag
     become: yes
     lineinfile:
       destfile: /etc/mysql/my.cnf
       line: '[mysql]'
       insertbefore: BOF
+
+  - name: insert mysqld timeout
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: 'connect_timeout=120'
+      insertbefore: BOF
+
+  - name: insert mysqld tag
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: '[mysqld]'
+      insertbefore: BOF
+
 
 
   - name: Copy mysqld config file
@@ -156,6 +171,10 @@
     become: yes
     template: src=mysqlJsCommands dest=/home/ubuntu/mysqlJsCommands  owner=root mode=0777
 
+  - name: Copy file2 for configuring the cluster
+    become: yes
+    template: src=file2 dest=/home/ubuntu/file2  owner=root mode=0777
+
   - name: execute mysql script to alter the plugin module 
     become: yes
     shell: /home/ubuntu/mysqlScript.sh  >> log.txt
@@ -164,8 +183,17 @@
     mysql_user:
         login_user: root
         login_password: passw0rd
-        name: cadmin2
+        name: cadmin1
         password: passw0rd
         priv: '*.*:ALL,GRANT'
-        host: ip-172-31-17-154
+        host: ip-172-31-19-246.us-east-2.compute.internal
         state: present
+
+  - name: Configure Cluster1
+    become: yes
+    shell: mysqlsh  -f mysqlJsCommands
+
+
+
+
+
